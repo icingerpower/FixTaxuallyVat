@@ -1,4 +1,5 @@
 #include <QFileInfo>
+#include <QMessageBox>
 #include <QDir>
 
 #include <xlsxdocument.h>
@@ -34,7 +35,7 @@ VatAnalyser::VatAnalyser(const QStringList &csvVatFilePaths)
                 const QString &taxes = elements[indTaxes];
                 const QString &dateTax = formatDateFromVatAmazon(elements[indDateTax]);
                 const QString &transactionCreatedId = createTransactionId(orderId, dateTax, untaxedAmount);
-                if (transactionCreatedId.contains("408-6395167-2481167"))
+                if (transactionCreatedId.contains("304-8446095-0411503"))
                 {
                     int TEMP=10;++TEMP;
                 }
@@ -181,7 +182,8 @@ void VatAnalyser::analyseExcelFile(const QString &excelFilePath) const
     const auto &sumTaxIndexes = getColIndexesSumTax(countryCode, col_index);
 
 
-    QList<int> rowsWrong;
+    QList<int> rowsWrong; // Regime
+    QStringList rowsWrongLikelyVat; // Likely wrong vat
     auto orderId_date_amountUntaxed_OSSshipmentId = m_orderId_date_amountUntaxed_OSSshipmentId;
     auto orderId_date_amountUntaxed_REGULARshipmentId = m_orderId_date_amountUntaxed_REGULARshipmentId;
     int nRowsValid = 0;
@@ -236,7 +238,9 @@ void VatAnalyser::analyseExcelFile(const QString &excelFilePath) const
             }
             else
             {
-                Q_ASSERT(false); // Unidentified order, we need to understand why
+                const QString &transactionId = cellTransactionId.toString();
+                rowsWrongLikelyVat << transactionId;
+                //Q_ASSERT(false); // Unidentified order, we need to understand why
             }
         }
 
@@ -283,6 +287,13 @@ void VatAnalyser::analyseExcelFile(const QString &excelFilePath) const
             qWarning() << "Could not save corrected file to" << filePathCorrected;
         }
         //*/
+    }
+    if (rowsWrongLikelyVat.size() > 0)
+    {
+        QMessageBox::information(
+            nullptr,
+            "Other errors",
+            "The following transaction has a likely vat error (vine order for instance):\n" + rowsWrongLikelyVat.join("\n"));
     }
 }
 
