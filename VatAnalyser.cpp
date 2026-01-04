@@ -15,6 +15,7 @@ VatAnalyser::VatAnalyser(const QStringList &csvVatFilePaths)
     m_differenceTableModel = new DifferenceTableModel{};
     for (const auto &csvVatFilePath : csvVatFilePaths)
     {
+        QString fileName = QFileInfo{csvVatFilePath}.fileName();
         CsvReader reader{csvVatFilePath,
                     ",",
                     "\""};
@@ -73,6 +74,7 @@ VatAnalyser::VatAnalyser(const QStringList &csvVatFilePaths)
                     Q_ASSERT(okDouble);
                     m_differenceTableModel->record(
                                 orderId
+                                , fileName
                                 , shipmentId
                                 , m_shipmentId_untaxed[shipmentId]
                                 , m_shipmentId_taxes[shipmentId]

@@ -9,7 +9,7 @@ class DifferenceTableModel : public QAbstractTableModel
 
 public:
     explicit DifferenceTableModel(QObject *parent = nullptr);
-    void record(const QString &orderId,
+    void record(const QString &orderId, const QString &fileName,
         const QString &shipmentId,
         double untaxedAmount,
         double taxes, const QString &amazon,

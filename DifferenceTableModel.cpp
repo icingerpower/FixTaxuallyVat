@@ -18,6 +18,7 @@ DifferenceTableModel::DifferenceTableModel(QObject *parent)
 
 void DifferenceTableModel::record(
         const QString &orderId
+        , const QString &fileName
         , const QString &shipmentId
         , double untaxedAmount
         , double taxes
@@ -31,6 +32,7 @@ void DifferenceTableModel::record(
     m_listOfVariantList
             << QVariantList{
                orderId
+               , fileName
                , shipmentId
                , untaxedAmount
                , taxes
