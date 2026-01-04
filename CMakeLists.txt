@@ -26,6 +26,8 @@ set(PROJECT_SOURCES
         MainWindow.ui
         VatAnalyser.h
         VatAnalyser.cpp
+        DifferenceTableModel.h
+        DifferenceTableModel.cpp
         ${UTILS_FILES}
 )
 

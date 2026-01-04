@@ -4,12 +4,15 @@
 
 #include <xlsxdocument.h>
 
+#include "DifferenceTableModel.h"
+
 #include "../common/utils/CsvReader.h"
 
 #include "VatAnalyser.h"
 
 VatAnalyser::VatAnalyser(const QStringList &csvVatFilePaths)
 {
+    m_differenceTableModel = new DifferenceTableModel{};
     for (const auto &csvVatFilePath : csvVatFilePaths)
     {
         CsvReader reader{csvVatFilePath,
@@ -25,42 +28,72 @@ VatAnalyser::VatAnalyser(const QStringList &csvVatFilePaths)
         int indUntaxedAmount = dataRode->header.pos("TOTAL_ACTIVITY_VALUE_AMT_VAT_EXCL");
         int indTaxes = dataRode->header.pos("TOTAL_ACTIVITY_VALUE_VAT_AMT");
         int indTaxReportingScheme = dataRode->header.pos("TAX_REPORTING_SCHEME");
+        int indTaxDateDepart = dataRode->header.pos("TAX_CALCULATION_DATE");
+        int indMarketplace = dataRode->header.pos("MARKETPLACE");
+        int indCountryFrom = dataRode->header.pos("DEPARTURE_COUNTRY");
+        int indCountryTo = dataRode->header.pos("ARRIVAL_COUNTRY");
         for (const auto &elements : dataRode->lines)
         {
             if (elements.size() > 10)
             {
                 const QString &orderId = elements[indOrderId];
                 const QString &shipmentId = elements[indShipmentId];
+                const QString &countryFrom = elements[indCountryFrom];
+                const QString &countryTo = elements[indCountryTo];
+                const QString &amazon = elements[indMarketplace];
                 const QString &untaxedAmount = elements[indUntaxedAmount];
                 const QString &taxes = elements[indTaxes];
                 const QString &dateTax = formatDateFromVatAmazon(elements[indDateTax]);
                 const QString &transactionCreatedId = createTransactionId(orderId, dateTax, untaxedAmount);
-                if (transactionCreatedId.contains("304-8446095-0411503"))
+                const QString &dateTaxDepartString = formatDateFromVatAmazon(elements[indTaxDateDepart]);
+                QDate dateTaxDepart = QDate::fromString(dateTaxDepartString, "yyyy-MM-dd");
+                if (dateTaxDepart.daysTo(QDate::currentDate()) < 770)
                 {
-                    int TEMP=10;++TEMP;
-                }
-                const QString &taxReportingScheme = elements[indTaxReportingScheme];
-                if (taxReportingScheme == "UNION-OSS")
-                {
-                    m_orderId_date_amountUntaxed_OSSshipmentId.insert(transactionCreatedId, shipmentId);
-                }
-                else if (taxReportingScheme == "REGULAR")
-                {
-                    m_orderId_date_amountUntaxed_REGULARshipmentId.insert(transactionCreatedId, shipmentId);
+                    if (transactionCreatedId.contains("304-8446095-0411503"))
+                    {
+                        int TEMP=10;++TEMP;
+                    }
+                    const QString &taxReportingScheme = elements[indTaxReportingScheme];
+                    if (taxReportingScheme == "UNION-OSS")
+                    {
+                        m_orderId_date_amountUntaxed_OSSshipmentId.insert(transactionCreatedId, shipmentId);
+                    }
+                    else if (taxReportingScheme == "REGULAR")
+                    {
+                        m_orderId_date_amountUntaxed_REGULARshipmentId.insert(transactionCreatedId, shipmentId);
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                    bool okDouble = false;
+                    m_shipmentId_untaxed[shipmentId] = untaxedAmount.toDouble(&okDouble);
+                    Q_ASSERT(okDouble);
+                    m_shipmentId_taxes[shipmentId] = taxes.toDouble(&okDouble);
+                    Q_ASSERT(okDouble);
+                    m_differenceTableModel->record(
+                                orderId
+                                , shipmentId
+                                , m_shipmentId_untaxed[shipmentId]
+                                , m_shipmentId_taxes[shipmentId]
+                                , amazon
+                                , countryFrom
+                                , countryTo
+                                , dateTax);
                 }
                 else
                 {
-                    continue;
+                    qDebug() << "Fake order refund" << orderId << "from created date" << dateTaxDepart;
                 }
-                bool okDouble = false;
-                m_shipmentId_untaxed[shipmentId] = untaxedAmount.toDouble(&okDouble);
-                Q_ASSERT(okDouble);
-                m_shipmentId_taxes[shipmentId] = taxes.toDouble(&okDouble);
-                Q_ASSERT(okDouble);
             }
         }
         //int indTaxes = dataRode->header.pos("TOTAL_ACTIVITY_VALUE_VAT_AMT");
     }
+}
+
+VatAnalyser::~VatAnalyser()
+{
+    m_differenceTableModel->deleteLater();
 }
 
 QString VatAnalyser::formatDateFromVatAmazon(const QString &dateString) const
@@ -94,6 +127,11 @@ int VatAnalyser::fixLastCol(const QString &countryCode, int colLast) const
         return qMax(colLast, country_max[countryCode]);
     }
     return colLast;
+}
+
+DifferenceTableModel *VatAnalyser::differenceTableModel() const
+{
+    return m_differenceTableModel;
 }
 
 QString VatAnalyser::createTransactionId(
@@ -290,10 +328,14 @@ void VatAnalyser::analyseExcelFile(const QString &excelFilePath) const
     }
     if (rowsWrongLikelyVat.size() > 0)
     {
+        QSet<QString> wrongOrdedIds{rowsWrongLikelyVat.begin(), rowsWrongLikelyVat.end()};
+        m_differenceTableModel->removeAllBut(wrongOrdedIds);
+        /*
         QMessageBox::information(
             nullptr,
             "Other errors",
             "The following transaction has a likely vat error (vine order for instance):\n" + rowsWrongLikelyVat.join("\n"));
+            //*/
     }
 }
 

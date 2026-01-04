@@ -4,10 +4,13 @@
 #include <QStringList>
 #include <QSet>
 
+class DifferenceTableModel;
+
 class VatAnalyser
 {
 public:
     VatAnalyser(const QStringList &csvVatFilePaths);
+    ~VatAnalyser();
     QString createTransactionId(
             const QString &orderId, const QString &dateTransaction, const QString &amountHt) const;
     void analyseExcelFile(const QString &excelFilePath) const;
@@ -19,7 +22,10 @@ public:
     QString formatDateFromVatAmazon(const QString &date) const;
     int fixLastCol(const QString &countryCode, int lastCol) const;
 
+    DifferenceTableModel *differenceTableModel() const;
+
 private:
+    DifferenceTableModel *m_differenceTableModel;
     QMultiHash<QString, QString> m_orderId_date_amountUntaxed_OSSshipmentId;
     QMultiHash<QString, QString> m_orderId_date_amountUntaxed_REGULARshipmentId;
     QHash<QString, double> m_shipmentId_untaxed;

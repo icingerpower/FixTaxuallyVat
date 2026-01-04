@@ -1,7 +1,10 @@
 #include <QFileDialog>
 #include <QSettings>
+#include <QDialog>
+#include <QDialogButtonBox>
 
 #include "VatAnalyser.h"
+#include "DifferenceTableModel.h"
 
 #include "MainWindow.h"
 #include "./ui_MainWindow.h"
@@ -101,6 +104,37 @@ void MainWindow::analyzeResaveTaxuallyFiles()
         {
             vatAnalyser.analyseExcelFile(filePath);
         }
+        auto differenceTableModel = vatAnalyser.differenceTableModel();
+        // TODO create a dialog with a QTableView thta will dispaly differenceTableModel
+        auto *dlg = new QDialog(this);
+        dlg->setWindowTitle(tr("VAT Differences"));
+        dlg->setAttribute(Qt::WA_DeleteOnClose, true);
+        dlg->resize(1200, 700);
+
+        auto *layout = new QVBoxLayout(dlg);
+
+        auto *view = new QTableView(dlg);
+        view->setModel(differenceTableModel);
+        view->setSelectionBehavior(QAbstractItemView::SelectRows);
+        view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        view->setAlternatingRowColors(true);
+        view->setSortingEnabled(true);
+        view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+        // headers / sizing
+        view->horizontalHeader()->setStretchLastSection(true);
+        view->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        view->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+        layout->addWidget(view);
+
+        auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, dlg);
+        QObject::connect(buttons, &QDialogButtonBox::rejected, dlg, &QDialog::reject);
+        QObject::connect(buttons, &QDialogButtonBox::accepted, dlg, &QDialog::accept);
+        layout->addWidget(buttons);
+
+        dlg->setLayout(layout);
+        dlg->exec();
     }
 
     ui->buttonCopyVatInfos->setEnabled(true);
