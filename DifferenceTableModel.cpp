@@ -2,6 +2,7 @@
 
 const QStringList DifferenceTableModel::HEADER{
     QObject::tr("Order id")
+    , QObject::tr("File name")
     , QObject::tr("Shipment ID")
     , QObject::tr("Untaxed amount")
     , QObject::tr("Taxes")

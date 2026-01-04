@@ -328,11 +328,11 @@ void VatAnalyser::analyseExcelFile(const QString &excelFilePath) const
         }
         //*/
     }
+    QSet<QString> wrongOrdedIds{rowsWrongLikelyVat.begin(), rowsWrongLikelyVat.end()};
+    m_differenceTableModel->removeAllBut(wrongOrdedIds);
     if (rowsWrongLikelyVat.size() > 0)
     {
-        QSet<QString> wrongOrdedIds{rowsWrongLikelyVat.begin(), rowsWrongLikelyVat.end()};
-        m_differenceTableModel->removeAllBut(wrongOrdedIds);
-        /*
+        //*
         QMessageBox::information(
             nullptr,
             "Other errors",

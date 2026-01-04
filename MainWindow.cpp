@@ -119,7 +119,6 @@ void MainWindow::analyzeResaveTaxuallyFiles()
         view->setSelectionMode(QAbstractItemView::ExtendedSelection);
         view->setAlternatingRowColors(true);
         view->setSortingEnabled(true);
-        view->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
         // headers / sizing
         view->horizontalHeader()->setStretchLastSection(true);
