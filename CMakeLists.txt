@@ -19,6 +19,11 @@ find_package(QXlsxQt6 REQUIRED HINTS "${Qt_DIR_HINT}/../../../../lib/cmake/QXlsx
 
 include(../common/utils/utils.cmake)
 
+# Compatibility stub: provides xlsxreadsax.h for QXlsx builds that omit it.
+# Must come before the system QXlsx include directories so the quoted include
+# in xlsxdocument.h falls back here when the file is absent from the install.
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/compat)
+
 set(PROJECT_SOURCES
         main.cpp
         MainWindow.cpp
